@@ -1,4 +1,7 @@
 import streamlit as st
+from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 st.set_page_config(
     page_title="Bridge Calc App",
@@ -200,8 +203,74 @@ with right:
         if result == "OK":
             st.success(f"Final Result: {result}")
         else:
-            st.error(f"Final Result: {result}")
+        st.error(f"Final Result: {result}")
+        pdf_buffer = create_pdf_report(
+        fc, fy, b, h, cover, bar_size, num_bars, Mu,
+        As, d, a, Mn, phi_Mn, DCR, result
+        )
 
+        st.download_button(
+            label="Download PDF Report",
+            data=pdf_buffer,
+            file_name="bent_cap_flexural_report.pdf",
+            mime="application/pdf"
+        )
     else:
+
+def create_pdf_report(fc, fy, b, h, cover, bar_size, num_bars, Mu, As, d, a, Mn, phi_Mn, DCR, result):
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph("<b>Bridge Calculation Report</b>", styles["Title"]))
+    story.append(Spacer(1, 12))
+
+    story.append(Paragraph("<b>Project:</b> Sample Bridge", styles["Normal"]))
+    story.append(Paragraph("<b>Engineer:</b> Rushil Mojidra", styles["Normal"]))
+    story.append(Paragraph("<b>Calculation:</b> Bent Cap Flexural Check", styles["Normal"]))
+    story.append(Spacer(1, 16))
+
+    story.append(Paragraph("<b>Input Summary</b>", styles["Heading2"]))
+    story.append(Paragraph(f"f'<sub>c</sub> = {fc:.2f} ksi", styles["Normal"]))
+    story.append(Paragraph(f"f<sub>y</sub> = {fy:.2f} ksi", styles["Normal"]))
+    story.append(Paragraph(f"b = {b:.2f} in", styles["Normal"]))
+    story.append(Paragraph(f"h = {h:.2f} in", styles["Normal"]))
+    story.append(Paragraph(f"Cover = {cover:.2f} in", styles["Normal"]))
+    story.append(Paragraph(f"Bar size = {bar_size}", styles["Normal"]))
+    story.append(Paragraph(f"Number of bars = {num_bars}", styles["Normal"]))
+    story.append(Paragraph(f"M<sub>u</sub> = {Mu:.2f} kip-ft", styles["Normal"]))
+    story.append(Spacer(1, 16))
+
+    story.append(Paragraph("<b>Calculations</b>", styles["Heading2"]))
+
+    story.append(Paragraph(f"A<sub>s</sub> = n A<sub>b</sub> = {num_bars}(1.56) = {As:.2f} in<sup>2</sup>", styles["Normal"]))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph(f"d = h - cover - d<sub>b</sub>/2 = {d:.2f} in", styles["Normal"]))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph(
+        f"a = A<sub>s</sub> f<sub>y</sub> / (0.85 f'<sub>c</sub> b) = {a:.2f} in",
+        styles["Normal"]
+    ))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph(
+        f"M<sub>n</sub> = A<sub>s</sub> f<sub>y</sub>(d - a/2) / 12 = {Mn:.2f} kip-ft",
+        styles["Normal"]
+    ))
+    story.append(Spacer(1, 16))
+
+    story.append(Paragraph("<b>Results</b>", styles["Heading2"]))
+    story.append(Paragraph(f"φM<sub>n</sub> = {phi_Mn:.2f} kip-ft", styles["Normal"]))
+    story.append(Paragraph(f"DCR = {DCR:.3f}", styles["Normal"]))
+    story.append(Paragraph(f"<b>Final Result: {result}</b>", styles["Normal"]))
+
+    doc.build(story)
+
+    buffer.seek(0)
+    return buffer
 
         st.info("Press 'Generate Report' to run calculations.")
