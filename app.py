@@ -16,7 +16,7 @@ def render_equation(eq, width=4.8, fontsize=12):
     plt.rcParams["mathtext.fontset"] = "stix"
     plt.rcParams["font.family"] = "serif"
 
-    fig, ax = plt.subplots(figsize=(width, 0.45))
+    fig, ax = plt.subplots(figsize=(width, 0.75))
     ax.text(0.02, 0.5, eq, fontsize=fontsize, va="center")
     ax.axis("off")
 
@@ -157,13 +157,14 @@ def create_pdf_report(
     
         eq_img = render_equation(eq)
     
-        story.append(
-            Image(
-                eq_img,
-                width=360,
-                height=28
-            )
-        )
+        img = Image(eq_img)
+    
+        # Keep original aspect ratio.
+        img.drawWidth = 360
+        img.drawHeight = 360 * img.imageHeight / img.imageWidth
+    
+        story.append(img)
+        story.append(Spacer(1, 12))
 
     story.append(Spacer(1, 8))
     # Results
