@@ -1,12 +1,37 @@
 import streamlit as st
 from io import BytesIO
 from datetime import datetime
+import matplotlib.pyplot as plt
+from reportlab.platypus import Image
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 
+
+def render_equation(eq, width=4.8, fontsize=12):
+    img_buffer = BytesIO()
+
+    plt.rcParams["mathtext.fontset"] = "stix"
+    plt.rcParams["font.family"] = "serif"
+
+    fig, ax = plt.subplots(figsize=(width, 0.45))
+    ax.text(0.02, 0.5, eq, fontsize=fontsize, va="center")
+    ax.axis("off")
+
+    plt.savefig(
+        img_buffer,
+        format="png",
+        dpi=300,
+        bbox_inches="tight",
+        transparent=True,
+        pad_inches=0.03
+    )
+
+    plt.close(fig)
+    img_buffer.seek(0)
+    return img_buffer
 
 # ---------------------------------------------------
 # PAGE CONFIG
@@ -96,28 +121,51 @@ def create_pdf_report(
 
     # Calculations
     story.append(Paragraph("<b>Calculations</b>", styles["Heading2"]))
-    story.append(Spacer(1, 6))
-
-    calc_style = styles["Normal"]
-    calc_style.fontName = "Times-Roman"
-    calc_style.fontSize = 10
-    calc_style.leading = 16
-
+    story.append(Spacer(1, 10))
+    
     equations = [
-        f"A<sub>s</sub> = n A<sub>b</sub> = {num_bars}({Ab:.2f}) = {As:.2f} in<sup>2</sup>",
-        f"d = h - cover - d<sub>b</sub>/2 = {h:.2f} - {cover:.2f} - {db:.3f}/2 = {d:.2f} in",
-        f"a = A<sub>s</sub> f<sub>y</sub> / (0.85 f'<sub>c</sub> b) = {a:.2f} in",
-        f"M<sub>n</sub> = A<sub>s</sub> f<sub>y</sub> (d - a/2) / 12 = {Mn:.2f} kip-ft",
-        f"φM<sub>n</sub> = {phi:.2f}({Mn:.2f}) = {phi_Mn:.2f} kip-ft",
-        f"DCR = M<sub>u</sub> / φM<sub>n</sub> = {Mu:.2f} / {phi_Mn:.2f} = {DCR:.3f}",
+    
+        rf"$A_s = n A_b$",
+    
+        rf"$A_s = {num_bars}({Ab:.2f}) = {As:.2f}\ \mathrm{{in}}^2$",
+    
+    
+        rf"$d = h - cover - \frac{{d_b}}{{2}}$",
+    
+        rf"$d = {h:.2f} - {cover:.2f} - \frac{{{db:.3f}}}{{2}} = {d:.2f}\ \mathrm{{in}}$",
+    
+    
+        rf"$a = \frac{{A_s f_y}}{{0.85 f'_c b}}$",
+    
+        rf"$a = \frac{{({As:.2f})({fy:.2f})}}{{0.85({fc:.2f})({b:.2f})}} = {a:.2f}\ \mathrm{{in}}$",
+    
+    
+        rf"$M_n = \frac{{A_s f_y (d-a/2)}}{{12}}$",
+    
+        rf"$M_n = \frac{{({As:.2f})({fy:.2f})({d:.2f}-{a:.2f}/2)}}{{12}} = {Mn:.2f}\ \mathrm{{kip-ft}}$",
+    
+    
+        rf"$\phi M_n = {phi:.2f}({Mn:.2f}) = {phi_Mn:.2f}\ \mathrm{{kip-ft}}$",
+    
+    
+        rf"$DCR = \frac{{M_u}}{{\phi M_n}}$",
+    
+        rf"$DCR = \frac{{{Mu:.2f}}}{{{phi_Mn:.2f}}} = {DCR:.3f}$",
     ]
-
+    
     for eq in equations:
-        story.append(Paragraph(eq, calc_style))
-        story.append(Spacer(1, 8))
+    
+        eq_img = render_equation(eq)
+    
+        story.append(
+            Image(
+                eq_img,
+                width=360,
+                height=28
+            )
+        )
 
     story.append(Spacer(1, 8))
-
     # Results
     story.append(Paragraph("<b>Results</b>", styles["Heading2"]))
 
